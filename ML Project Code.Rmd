@@ -5,7 +5,8 @@ date: "10/10/2019"
 ---
 
 1. Description of HAR data
-```{r Data Descruption, echo=FALSE, message=FALSE, warning=FALSE, out.height="50%", out.width="100px"}
+
+```{r Data Descruption, echo=FALSE, message=FALSE, warning=FALSE, out.height="50%", out.width="200px"}
 library(knitr)
 library(png)
 
