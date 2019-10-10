@@ -1,0 +1,111 @@
+---
+title: "JHU Practical Machine Learning"
+author: "Mohamed Rizwan"
+date: "10/10/2019"
+---
+
+1. Description of HAR data
+```{r Data Descruption, echo=FALSE, message=FALSE, warning=FALSE, out.height="50%", out.width="100px"}
+library(knitr)
+library(png)
+
+options(knitr.graphics.auto_pdf = TRUE)
+knitr::include_graphics("http://web.archive.org/web/20161025043219im_/http://groupware.les.inf.puc-rio.br/static/WLE/on-body-sensing-schema.png")
+```
+*HAR (human activity recognition) research has focused to predict "which" activity was performed at a specific point in time (like with the Daily Living Activities).*
+
+*Weight Lifting Exercises dataset investigated "how (well)" an activity was performed by the wearer.*
+
+*Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions:*
+> exactly according to the specification (Class A) # correct
+> throwing the elbows to the front (Class B)
+> lifting the dumbbell only halfway (Class C)
+> lowering the dumbbell only halfway (Class D)
+> throwing the hips to the front (Class E)
+
+*Participants were supervised by an experienced weight lifter to make sure that all participants could easily simulate the mistakes*
+
+*Safe and controlled exercises by using a relatively light dumbbell (1.25kg).*
+
+*source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har*
+
+2. Data Processing
+*Loaded required packages*
+```{r Libraries, echo=TRUE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(rpart)
+library(randomForest)
+library(rattle)
+```
+
+### Data Clearning to prepare to get training set and testing sets
+```{r Data Cleaning, echo=TRUE, message=FALSE, warning=FALSE}
+training_data<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",
+                        na.strings = c("NA","#DIV/0!",""),header=TRUE,sep = ",")
+#*Downloaded the training data from the given url, removed columns with blank cells and "#DIV/0!"*
+
+trfun <- function(x){sum(is.na(x))}
+trainSet<- training_data[sapply(training_data,trfun)==0] # removed the columns with all NAs
+trainSet <- trainSet[,-c(1:7)] # removed first 7 columns as they are not necessary for prediction
+```
+
+3. Data Partitioned to create Training and Testing sets for model tuning
+```{r Data Partition, echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(1977)
+Intrain <- createDataPartition(trainSet$classe,p=0.69,list = FALSE)
+trainingOne <- trainSet[Intrain,]
+testingOne <- trainSet[-Intrain,]
+```
+
+4. Applied ML algos/methods
+(i). method = Decision tree (Recurssive Partitioning and Regression Trees)
+```{r Decision Tree, echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(1977)
+library(rattle)
+library(rpart.plot)
+
+modelTree<- rpart(trainingOne$classe ~ .,data=trainingOne,method ="class")
+fancyRpartPlot(modelTree,cex=0.4)
+
+PredTree <- predict(modelTree,testingOne,type="class")
+confusionMatrix(PredTree,testingOne$classe)
+```
+_Accuracy_of_ model_ = 74.51%
+
+(ii). method = Random Forest
+```{r RF, echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(1980)
+library(randomForest)
+modelRF<- randomForest(trainingOne$classe ~ .,data=trainingOne)
+modelRF
+
+PredRF <- predict(modelRF,testingOne)
+confRF <- confusionMatrix(PredRF,testingOne$classe)
+plot(confRF$table,color = confRF$byClass, cex=.5,main = paste("Accuracy% =",100*round(confRF$overall['Accuracy'], 4)))
+```
+
+(iii). method = Support Vector Machine
+```{r SVM, echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(1990)
+library(kernlab)
+modelSVM <- ksvm(trainingOne$classe ~ ., data = trainingOne, type= "nu-svc",nu=0.1)
+PredSVM <- predict(modelSVM,testingOne,type="response")
+confusionMatrix(PredSVM,testingOne$classe)
+```
+Accuracy of the model =97.65%
+
+5. Selected the random forest model to apply in finding the predictions of 20 test cases
+```{r Quiz Answers, echo=TRUE, message=FALSE, warning=FALSE}
+
+test_cases <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",
+                        na.strings = c("NA","#DIV/0!",""),header=TRUE, sep=",")
+#Downloaded the test data from the given url, removed columns with blank cells and "#DIV/0!"
+
+Answers_Quiz <- predict(modelRF, newdata=test_cases)
+print(Answers_Quiz)
+```
+
+
+
