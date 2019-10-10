@@ -2,6 +2,8 @@
 title: "JHU Practical Machine Learning"
 author: "Mohamed Rizwan"
 date: "10/10/2019"
+R Pubs: http://rpubs.com/rizwanm789/537718
+
 ---
 
 1. Description of HAR data
